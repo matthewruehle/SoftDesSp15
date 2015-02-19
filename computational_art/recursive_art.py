@@ -4,6 +4,7 @@ Matt Ruehle, Feb 2015
 """
 
 import random
+from random import choice
 import datetime
 import math
 from math import pi
@@ -25,13 +26,13 @@ def build_random_function(min_depth, max_depth):
     
         Also, in my opinion -- abs and neg_abs are aesthetically unpleasant. They work for the requirements, but Imma figure out a different operation because they make everything a bit gray-er.
     """
-    which = random.choice
-    function_options = ["prod","avg","cos_pi","sin_pi","abs","neg_abs"]
+    function_options = ["prod","cos_pi","sin_pi", "avg"]
+    #other functions which can be used in this list: abs, neg_abs, wrap_shift, cos_2pi, sin_2pi
     depth = random.randint(min_depth, max_depth)
     if depth == 1:
-        return [which(["x","y"])]
+        return [choice(["x","y"])]
     else:
-        new_recurse = [which(function_options)]
+        new_recurse = [choice(function_options)]
         if new_recurse[0] in ["prod","avg"]:
             new_recurse.append(build_random_function(depth-1, depth-1))
             new_recurse.append(build_random_function(depth-1, depth-1))
@@ -39,8 +40,7 @@ def build_random_function(min_depth, max_depth):
             new_recurse.append(build_random_function(depth-1, depth-1))
         return new_recurse
 
-
-def evaluate_random_function(f, x, y):
+def evaluate_random_function(f, x, y,t = 0):
     """ Evaluate the random function f with inputs x,y
         Representation of the function f is defined in the assignment writeup
 
@@ -49,37 +49,41 @@ def evaluate_random_function(f, x, y):
         y: the value of y to be used to evaluate the function
         returns: the function value
 
-        NOTE: Trying to figure out a way to do this without using eval(), since that's a big source of vulnerability for a program.
-        In the meantime, eval it is.
-
         >>> evaluate_random_function(["x"],-0.5, 0.75)
         -0.5
         >>> evaluate_random_function(["y"],0.1,0.02)
         0.02
-
-    this was the old version, from back when life was simple.
-    return eval("".join(f)) #this will join all of the terms. For future implementation, it might be better to join them with "+", or "*", or something like that?..
-                            #the join command is used because the function is passed a list--even though for the examples/doctests, said list has just one element.
     """
     if f[0] == 'x':
         return x
     elif f[0] == 'y':
         return y
+    elif f[0] == 't':
+        return t
     elif f[0] == 'sin_pi':
-        return math.sin(pi * evaluate_random_function(f[1],x,y))
+        return math.sin(pi * evaluate_random_function(f[1],x,y,t))
     elif f[0] == 'cos_pi':
-        return math.cos(pi * evaluate_random_function(f[1],x,y))
+        return math.cos(pi * evaluate_random_function(f[1],x,y,t))
+    elif f[0] == 'sin_2pi':
+        return math.sin(2*pi * evaluate_random_function(f[1],x,y,t))
+    elif f[0] == 'cos_2pi':
+        return math.cos(2*pi * evaluate_random_function(f[1],x,y,t))    
     elif f[0] == 'abs':
-        return math.fabs(evaluate_random_function(f[1],x,y))
+        return math.fabs(evaluate_random_function(f[1],x,y,t))
     elif f[0] == 'neg_abs':
-        return -1 * math.fabs(evaluate_random_function(f[1],x,y))
+        return -1 * math.fabs(evaluate_random_function(f[1],x,y,t))
     elif f[0] == 'prod':
-        return evaluate_random_function(f[1],x,y) * evaluate_random_function(f[2],x,y)
+        return evaluate_random_function(f[1],x,y,t) * evaluate_random_function(f[2],x,y,t)
     elif f[0] == 'avg':
-        return (evaluate_random_function(f[1],x,y) + evaluate_random_function(f[2],x,y)) * 0.5
+        return (evaluate_random_function(f[1],x,y,t) + evaluate_random_function(f[2],x,y,t)) * 0.5
+    elif f[0] == 'wrap_shift':
+        shifted = evaluate_random_function(f[1],x,y,t) + 1
+        if shifted > 1:
+            return shifted - 2
+        else:
+            return shifted
     else:
-        print("ERF passed something wrong.")
-        return 'kablooie'
+        print("ERROR: ERF passed something wrong.")
 
 def remap_interval(val, input_interval_start, input_interval_end, output_interval_start, output_interval_end):
     """ Given an input value in the interval [input_interval_start,
@@ -96,7 +100,7 @@ def remap_interval(val, input_interval_start, input_interval_end, output_interva
         output_inteval_end: the end of the interval that contains all possible
                             output values
         returns: the value remapped from the input to the output interval
-,        >>> remap_interval(0.5, 0, 1, 0, 10)
+        >>> remap_interval(0.5, 0, 1, 0, 10)
         5.0
         >>> remap_interval(5, 4, 6, 0, 2)
         1.0
@@ -105,7 +109,6 @@ def remap_interval(val, input_interval_start, input_interval_end, output_interva
     """
     if val < input_interval_start or val > input_interval_end:
         print("Input out of bounds.")
-        return None
     else:
         portion_of_input = (val - float(input_interval_start)) / (input_interval_end - input_interval_start)
         amount_of_output = portion_of_input * (output_interval_end - output_interval_start)
@@ -128,10 +131,8 @@ def color_map(val):
         >>> color_map(0.5)
         191
     """
-    # NOTE: This relies on remap_interval, which you must provide
     color_code = remap_interval(val, -1, 1, 0, 255)
     return int(color_code)
-
 
 def test_image(filename, x_size=350, y_size=350):
     """ Generate test image with random pixels and save as an image file.
@@ -139,7 +140,6 @@ def test_image(filename, x_size=350, y_size=350):
         filename: string filename for image (should be .png)
         x_size, y_size: optional args to set image dimensions (default: 350)
     """
-    # Create image and loop over all pixels
     im = Image.new("RGB", (x_size, y_size))
     pixels = im.load()
     for i in range(x_size):
@@ -152,8 +152,7 @@ def test_image(filename, x_size=350, y_size=350):
 
     im.save(filename)
 
-
-def generate_art(filename, x_size=350, y_size=350):
+def generate_art(filename, x_size=350, y_size=350, t_number=100):
     """ Generate computational art and save as an image file.
 
         filename: string filename for image (should be .png)
@@ -179,18 +178,45 @@ def generate_art(filename, x_size=350, y_size=350):
 
     im.save(filename)
 
+def generate_animation(filename, x_size=350, y_size=350, t_number=100):
+    """ Generate computational art and save as an image file.
+
+        filename: string filename for image (should be .png)
+        x_size, y_size: optional args to set image dimensions (default: 350)
+        t_number: number of frames to do
+    """
+    # Functions for red, green, and blue channels - where the magic happens!
+    red_function = build_random_function(7,9)
+    green_function = build_random_function(7,9)
+    blue_function = build_random_function(7,9)
+
+    # Create image and loop over all pixels
+    im = Image.new("RGB", (x_size, y_size))
+    pixels = im.load()
+    for k in range(t_number):
+        for i in range(x_size):
+            for j in range(y_size):
+                x = remap_interval(i, 0, x_size, -1, 1)
+                y = remap_interval(j, 0, y_size, -1, 1)
+                t = remap_interval(k, 0, t_number, -1, 1)
+                pixels[i, j] = (
+                        color_map(evaluate_random_function(red_function, x, y, t)),
+                        color_map(evaluate_random_function(green_function, x, y, t)),
+                        color_map(evaluate_random_function(blue_function, x, y, t)))
+        im.save("%03d_" + filename) % k+1
+        im.save(str(t_number*2 - k) + "_" + filename)
+
+def make_animation():
+    generate_animation("my_animation.png",600,600,100)
+
+def make_pretty_picture():
+    now = datetime.datetime.now()
+    generate_art("myart_" + str("-".join(str(i) for i in [now.month,now.day,now.hour,now.minute])) + ".png",1920,1080,1)
+
+
 
 if __name__ == '__main__':
-    import doctest
-    doctest.testmod()
-
-    # Create some computational art!
-    # TODO: Un-comment the generate_art function call after you
-    #       implement remap_interval and evaluate_random_function
-    now = datetime.datetime.now()
-    #generate_art("myart.png")
-    generate_art("myart_" + str("-".join(str(i) for i in [now.month,now.day,now.hour,now.minute])) + ".png",600,600)
-
-    # Test that PIL is installed correctly
-    # TODO: Comment or remove this function call after testing PIL install
-    #test_image("noise.png")
+    # import doctest
+    # doctest.testmod()
+make_pretty_picture()
+# make_animation()
