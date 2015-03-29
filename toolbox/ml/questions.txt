@@ -1,0 +1,11 @@
+Matt Ruehle | Software Design, Spring 2015 | Machine Learning Toolbox
+1. What is the general trend of the curve?
+    The general trend is upwards. This makes sense: giving the algorithm more information with which to train itself ought to make it more accurate.
+2. Are there parts of the curve that appear to be noisier than others? Why?
+    Indeed there are! When the program is run for a small number of trials, the entire thing looks similarly noisy--but, for lower percentages, the deviation/"noise" makes up a greater % of the whole value.
+    Additionally, when looking at a plot of standard deviations versus training percentages, a surprising trend appears. Low percentages actually have a *lower* standard deviation than those in the 20-40% range; meanwhile, the deviation for 80-90% is practically half that of 50-60%.
+    The improved consistency of high percentages is likely due to the model having more time to develop. That said, I'm a bit perplexed by why the variation is reliably *lower* for particularly low training percentages--I'll give it some thought, but right now I'm at a loss.
+3. How many trials do you need to get a smooth curve?
+    Often, as few as 10 trials will yield a relatively smooth curve, or higher numbers will have less-smooth curves. That said--at least based on a qualitative "gut-check," it looks like 20-30 trials gives reasonably smooth curves.
+4. Try different values for C. What happens?
+    Smaller c-values (e.g., ones raised to a higher negative exponent, like **-15 or **-20) appear to have markedly "noisier" curves. Bigger c-values wind up much more accurate -- at least with this particular test; their peak accuracies are higher, and they reach said peaks sooner. I'm assuming there's got to be a reason why we don't use it for everything, though--will read up on that later.
